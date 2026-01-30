@@ -20,5 +20,5 @@ jobs:
           pip install -r requirements.txt
       - name: Run feature + training scripts
         run: |
-          python scripts/feature_pipeline.py
-          python scripts/training_pipeline.py
+          python scripts/aqi_features.py
+          python scripts/aqi_training.py
