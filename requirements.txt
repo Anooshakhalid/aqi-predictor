@@ -1,13 +1,28 @@
+# Data & HTTP requests
 pandas==2.1.1
 numpy==1.26.4
 requests==2.32.0
+
+# Scikit-learn for ML
 scikit-learn==1.3.2
 joblib==1.3.2
-tensorflow==2.18.0
+
+# TensorFlow for Neural Networks
+tensorflow==2.18.0  # Updated for Python 3.12 compatibility
+
+# SHAP for explainability
 shap==0.42.1
-hopsworks==4.2.*
+
+# Hopsworks / Feature Store
+hopsworks==4.2.*  # pick either 4.2.* or 3.0, not both
+
+# Kafka integration
 confluent-kafka
+
+# Jupyter (for notebooks)
 jupyter==1.0.0
 nbconvert==7.7.4
+
+# Plotting
 matplotlib==3.8.1
-seaborn==0.12.3
+seaborn==0.12.2  # Downgraded to a version compatible with Python 3.12
