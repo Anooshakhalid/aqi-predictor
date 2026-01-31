@@ -28,3 +28,9 @@ jobs:
           HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
           WAQI_API_KEY: ${{ secrets.WAQI_API_KEY }}
         run: python scripts/aqi_training.py
+       
+      - name: Upload SHAP plots
+        uses: actions/upload-artifact@v3
+        with:
+          name: shap-plots
+          path: shap_plots/   
