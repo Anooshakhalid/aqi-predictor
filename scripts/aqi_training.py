@@ -141,14 +141,28 @@ metrics = {
     "NeuralNet": {"R2": r2_score(y_test, nn_pred), "MAE": mean_absolute_error(y_test, nn_pred)}
 }
 
+def get_next_version(mr, model_name):
+    try:
+        model = mr.get_model(model_name)
+        versions = model.list_versions()
+        if versions:
+            latest_version = max(v.version for v in versions)
+            return latest_version + 1
+        else:
+            return 1
+    except Exception as e:
+        # Model does not exist yet
+        return 1
+
+
 # Set SHAP path for best model
 if best_model_name == "RandomForest":
     shap_plot_path = os.path.join(shap_dir, "shap_rf.png")
     joblib.dump(rf, "best_model.pkl")
-    latest_version = mr.get_model("aqi_rf_model").latest_version
+    next_version = get_next_version(mr, "aqi_rf_model")
     best_model = mr.python.create_model(
         name="aqi_rf_model",
-        version=latest_version + 1,
+        version=next_version,
         description="Random Forest model for AQI prediction",
         metrics=metrics["RandomForest"]
     )
@@ -158,10 +172,10 @@ if best_model_name == "RandomForest":
 elif best_model_name == "Ridge":
     shap_plot_path = os.path.join(shap_dir, "shap_ridge.png")
     joblib.dump(ridge, "best_model.pkl")
-    latest_version = mr.get_model("aqi_ridge_model").latest_version
+    next_version = get_next_version(mr, "aqi_rf_model")
     best_model = mr.python.create_model(
         name="aqi_ridge_model",
-        version=latest_version + 1,
+        version=next_version,
         description="Ridge Regression model for AQI prediction",
         metrics=metrics["Ridge"]
     )
@@ -171,10 +185,10 @@ elif best_model_name == "Ridge":
 elif best_model_name == "NeuralNet":
     shap_plot_path = os.path.join(shap_dir, "shap_nn.png")
     nn_model.save("best_model.keras")
-    latest_version = mr.get_model("aqi_nn_model").latest_version
+    next_version = get_next_version(mr, "aqi_rf_model")
     best_model = mr.tensorflow.create_model(
         name="aqi_nn_model",
-        version=latest_version + 1,
+        version=next_version,
         description="Neural Network model for AQI prediction",
         metrics=metrics["NeuralNet"]
     )
