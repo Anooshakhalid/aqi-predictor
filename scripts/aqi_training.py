@@ -131,16 +131,21 @@ if "NeuralNet" in models:
     plt.close()
 
 # -------------------------
-# 8. Save best model to Hopsworks Model Registry
+# 7 & 8. SHAP explainability & save best model
 # -------------------------
-mr = project.get_model_registry()
 
+# Ensure shap_dir exists
+shap_dir = "shap_plots"
+os.makedirs(shap_dir, exist_ok=True)
+
+# Compute metrics dictionary
 metrics = {
     "RandomForest": {"R2": r2_score(y_test, rf_pred), "MAE": mean_absolute_error(y_test, rf_pred)},
     "Ridge": {"R2": r2_score(y_test, ridge_pred), "MAE": mean_absolute_error(y_test, ridge_pred)},
     "NeuralNet": {"R2": r2_score(y_test, nn_pred), "MAE": mean_absolute_error(y_test, nn_pred)}
 }
 
+# Function to get next version safely
 def get_next_version(mr, model_name):
     """
     Return the next available version number for a model in Hopsworks Model Registry.
@@ -158,12 +163,16 @@ def get_next_version(mr, model_name):
         # Model doesn't exist yet
         return 1
 
-
-
-# Set SHAP path for best model
+# -------------------------
+# Save best model and SHAP
+# -------------------------
 if best_model_name == "RandomForest":
     shap_plot_path = os.path.join(shap_dir, "shap_rf.png")
+    
+    # Save locally
     joblib.dump(rf, "best_model.pkl")
+    
+    # Create next version in Hopsworks
     next_version = get_next_version(mr, "aqi_rf_model")
     best_model = mr.python.create_model(
         name="aqi_rf_model",
@@ -176,7 +185,9 @@ if best_model_name == "RandomForest":
 
 elif best_model_name == "Ridge":
     shap_plot_path = os.path.join(shap_dir, "shap_ridge.png")
+    
     joblib.dump(ridge, "best_model.pkl")
+    
     next_version = get_next_version(mr, "aqi_ridge_model")
     best_model = mr.python.create_model(
         name="aqi_ridge_model",
@@ -189,7 +200,10 @@ elif best_model_name == "Ridge":
 
 elif best_model_name == "NeuralNet":
     shap_plot_path = os.path.join(shap_dir, "shap_nn.png")
+    
+    # Save TensorFlow model locally
     nn_model.save("best_model.keras")
+    
     next_version = get_next_version(mr, "aqi_nn_model")
     best_model = mr.tensorflow.create_model(
         name="aqi_nn_model",
@@ -200,6 +214,5 @@ elif best_model_name == "NeuralNet":
     best_model.save("best_model.keras")
     best_model.save_artifact("shap_plot", shap_plot_path)
 
-print(f"Best model {best_model_name} saved to Hopsworks Model Registry successfully!")
-
-
+print(f"Best model '{best_model_name}' saved to Hopsworks Model Registry successfully!")
+print(f"SHAP plot saved at: {shap_plot_path}")
