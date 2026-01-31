@@ -1,60 +1,60 @@
-import requests
-import os
-import pandas as pd
-from datetime import datetime, timezone
-
-API_TOKEN = os.getenv("AQICN_API_TOKEN")
-CITY = "Karachi"
-
+# Feature pipeline
 def run_feature_pipeline():
-    # Load history
-    try:
-        history = pd.read_csv("data/karachi_aqi_last1yr.csv")
-        history["timestamp"] = pd.to_datetime(history["timestamp"])
-    except FileNotFoundError:
-        history = pd.DataFrame(columns=["timestamp", "aqi", "pm25"])
+    import os
+    import pandas as pd
+    import requests
+    import hopsworks
+    from datetime import datetime
 
-    # Fetch current AQI
-    url = f"https://api.waqi.info/feed/{CITY}/?token={API_TOKEN}"
-    r = requests.get(url)
+    # Load historical data
+    df = pd.read_csv("karachi_aqi_last1year.csv")
+    df['date'] = pd.to_datetime(df['date'])
+    df.columns = df.columns.str.strip()
 
-    try:
-        r_json = r.json()
-    except ValueError:
-        print("API did not return valid JSON!")
-        return history
+    # Calculate AQI from PM2.5
+    def calculate_aqi_pm25(pm25):
+        if pm25 <= 12:
+            return (50 / 12) * pm25
+        elif pm25 <= 35.4:
+            return 50 + ((pm25 - 12.1) / (35.4 - 12.1)) * 50
+        elif pm25 <= 55.4:
+            return 100 + ((pm25 - 35.5) / (55.4 - 35.5)) * 50
+        elif pm25 <= 150.4:
+            return 150 + ((pm25 - 55.5) / (150.4 - 55.5)) * 100
+        else:
+            return 300
 
-    # Ensure 'data' exists
-    data = r_json.get("data")
-    if not isinstance(data, dict):
-        print("API returned data as string or list, cannot parse:")
-        print(data)
-        return history
-
-    # Current timestamp
-    now = datetime.now(timezone.utc)
-
-    # Safe extraction
-    aqi = data.get("aqi")
-    pm25 = data.get("iaqi", {}).get("pm25", {}).get("v")
-
-    # Append row
-    history.loc[len(history)] = [now, aqi, pm25]
+    df['aqi'] = df['pm25'].apply(calculate_aqi_pm25)
+    df = df.sort_values('date')
 
     # Features
-    history["aqi_lag_1"] = history["aqi"].shift(1)
-    history["aqi_lag_3"] = history["aqi"].shift(3)
-    history["aqi_change_rate"] = history["aqi"] - history["aqi_lag_1"]
-    history["month"] = history["timestamp"].dt.month
-    history["day_of_week"] = history["timestamp"].dt.weekday
-    history["is_weekend"] = history["day_of_week"].apply(lambda x: 1 if x >= 5 else 0)
+    df['aqi_lag_1'] = df['aqi'].shift(1)
+    df['aqi_lag_3'] = df['aqi'].shift(3)
+    df['aqi_change_rate'] = df['aqi'].pct_change()
+    df['month'] = df['date'].dt.month
+    df['day_of_week'] = df['date'].dt.dayofweek
+    df['is_weekend'] = (df['day_of_week'] >= 5).astype(int)
+    df = df.dropna()
 
-    history = history.dropna().reset_index(drop=True)
-
-    # Save CSV
-    history.to_csv("data/karachi_aqi_last1yr.csv", index=False)
+    df.to_csv("karachi_aqi_features.csv", index=False)
     print("Feature pipeline done")
-    return history
+
+    # Upload to Hopsworks
+    project = hopsworks.login(
+        api_key_value=os.getenv("HOPSWORKS_API_KEY"),
+        project="AQIPred"
+    )
+    fs = project.get_feature_store()
+
+    feature_group = fs.create_feature_group(
+        name="karachi_aqishine_fg",
+        description="AQI features for Karachi",
+        version=1,
+        primary_key=["date"],
+        online_enabled=True
+    )
+    feature_group.insert(df, write_options={"wait_for_job": True})
+    print("Inserted features into Feature Store")
 
 if __name__ == "__main__":
     run_feature_pipeline()
