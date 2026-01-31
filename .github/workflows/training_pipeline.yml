@@ -30,7 +30,7 @@ jobs:
         run: python scripts/aqi_training.py
        
       - name: Upload SHAP plots
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: shap-plots
           path: shap_plots/   
