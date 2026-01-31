@@ -101,49 +101,39 @@ print(f"Best model: {best_model_name}")
 # 7 & 8. SHAP explainability & save best model
 # -------------------------
 
-# Ensure shap_dir exists
 shap_dir = "shap_plots"
 os.makedirs(shap_dir, exist_ok=True)
 
-# Get model registry
-mr = project.get_model_registry() 
+mr = project.get_model_registry()
 
-# Compute metrics dictionary
-metrics = {
-    "RandomForest": {"R2": r2_score(y_test, rf_pred), "MAE": mean_absolute_error(y_test, rf_pred)},
-    "Ridge": {"R2": r2_score(y_test, ridge_pred), "MAE": mean_absolute_error(y_test, ridge_pred)},
-    "NeuralNet": {"R2": r2_score(y_test, nn_pred), "MAE": mean_absolute_error(y_test, nn_pred)}
-}
-
-# Function to get next version safely
 def get_next_version(mr, model_name):
-    """
-    Return the next available version number for a model in Hopsworks Model Registry.
-    If the model doesn't exist, return 1.
-    """
     try:
         model = mr.get_model(model_name)
-        versions = model.list_versions()  # returns a list of Version objects
+        versions = model.list_versions()
         if versions:
-            latest_version = max(v.version for v in versions)
-            return latest_version + 1
-        else:
-            return 1
-    except Exception:
-        # Model doesn't exist yet
+            return max(v.version for v in versions) + 1
+        return 1
+    except:
         return 1
 
-# -------------------------
-# Save best model and SHAP
-# -------------------------
+# --------- RANDOM FOREST ----------
 if best_model_name == "RandomForest":
+    explainer = shap.TreeExplainer(rf)
+    shap_values = explainer.shap_values(X_test)
+
     shap_plot_path = os.path.join(shap_dir, "shap_rf.png")
-    
-    # Save locally
+    shap.summary_plot(
+        shap_values, X_test,
+        plot_type="bar",
+        feature_names=X_test.columns,
+        show=False
+    )
+    plt.savefig(shap_plot_path)
+    plt.close()
+
     joblib.dump(rf, "best_model.pkl")
-    
-    # Create next version in Hopsworks
     next_version = get_next_version(mr, "aqi_rf_model")
+
     best_model = mr.python.create_model(
         name="aqi_rf_model",
         version=next_version,
@@ -153,12 +143,24 @@ if best_model_name == "RandomForest":
     best_model.save("best_model.pkl")
     best_model.save_artifact("shap_plot", shap_plot_path)
 
+# --------- RIDGE ----------
 elif best_model_name == "Ridge":
+    explainer = shap.LinearExplainer(ridge, X_train_s)
+    shap_values = explainer.shap_values(X_test_s)
+
     shap_plot_path = os.path.join(shap_dir, "shap_ridge.png")
-    
+    shap.summary_plot(
+        shap_values, X_test_s,
+        plot_type="bar",
+        feature_names=X_test.columns,
+        show=False
+    )
+    plt.savefig(shap_plot_path)
+    plt.close()
+
     joblib.dump(ridge, "best_model.pkl")
-    
     next_version = get_next_version(mr, "aqi_ridge_model")
+
     best_model = mr.python.create_model(
         name="aqi_ridge_model",
         version=next_version,
@@ -168,13 +170,27 @@ elif best_model_name == "Ridge":
     best_model.save("best_model.pkl")
     best_model.save_artifact("shap_plot", shap_plot_path)
 
+# --------- NEURAL NET ----------
 elif best_model_name == "NeuralNet":
+    X_bg = shap.sample(X_train_s, 100)
+    X_test_small = shap.sample(X_test_s, 50)
+
+    explainer = shap.KernelExplainer(nn_model.predict, X_bg)
+    shap_values = explainer.shap_values(X_test_small)
+
     shap_plot_path = os.path.join(shap_dir, "shap_nn.png")
-    
-    # Save TensorFlow model locally
+    shap.summary_plot(
+        shap_values, X_test_small,
+        plot_type="bar",
+        feature_names=X_test.columns,
+        show=False
+    )
+    plt.savefig(shap_plot_path)
+    plt.close()
+
     nn_model.save("best_model.keras")
-    
     next_version = get_next_version(mr, "aqi_nn_model")
+
     best_model = mr.tensorflow.create_model(
         name="aqi_nn_model",
         version=next_version,
@@ -184,5 +200,4 @@ elif best_model_name == "NeuralNet":
     best_model.save("best_model.keras")
     best_model.save_artifact("shap_plot", shap_plot_path)
 
-print(f"Best model '{best_model_name}' saved to Hopsworks Model Registry successfully!")
-print(f"SHAP plot saved at: {shap_plot_path}")
+print(f"Best model {best_model_name} saved with SHAP to Hopsworks!")
