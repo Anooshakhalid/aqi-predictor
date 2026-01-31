@@ -96,39 +96,6 @@ for name, (model, pred, scaled) in models.items():
 best_model_name = max(metrics, key=lambda x: metrics[x]["R2"])
 print(f"Best model: {best_model_name}")
 
-import os
-import matplotlib.pyplot as plt
-
-# -------------------------
-# 7. SHAP explainability
-# -------------------------
-shap_dir = "shap_plots"
-os.makedirs(shap_dir, exist_ok=True)
-
-models = ["RandomForest", "Ridge", "NeuralNet"]
-
-if "RandomForest" in models:
-    explainer_rf = shap.TreeExplainer(rf)
-    shap_values_rf = explainer_rf.shap_values(X_test)
-    shap.summary_plot(shap_values_rf, X_test, plot_type="bar", feature_names=X_test.columns, show=False)
-    plt.savefig(os.path.join(shap_dir, "shap_rf.png"))
-    plt.close()
-
-if "Ridge" in models:
-    explainer_ridge = shap.LinearExplainer(ridge, X_train_s)
-    shap_values_ridge = explainer_ridge.shap_values(X_test_s)
-    shap.summary_plot(shap_values_ridge, X_test_s, plot_type="bar", feature_names=X_test.columns, show=False)
-    plt.savefig(os.path.join(shap_dir, "shap_ridge.png"))
-    plt.close()
-
-if "NeuralNet" in models:
-    X_bg = shap.sample(X_train_s, 100)
-    X_test_small = shap.sample(X_test_s, 50)
-    explainer_nn = shap.KernelExplainer(nn_model.predict, X_bg)
-    shap_values_nn = explainer_nn.shap_values(X_test_small)
-    shap.summary_plot(shap_values_nn, X_test_small, plot_type="bar", feature_names=X_test.columns, show=False)
-    plt.savefig(os.path.join(shap_dir, "shap_nn.png"))
-    plt.close()
 
 # -------------------------
 # 7 & 8. SHAP explainability & save best model
@@ -137,6 +104,9 @@ if "NeuralNet" in models:
 # Ensure shap_dir exists
 shap_dir = "shap_plots"
 os.makedirs(shap_dir, exist_ok=True)
+
+# Get model registry
+mr = project.get_model_registry() 
 
 # Compute metrics dictionary
 metrics = {
