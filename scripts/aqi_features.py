@@ -1,8 +1,5 @@
 # src/features.py
-try:
-    import pandas as pd
-except ImportError:
-    raise ImportError("pandas is not installed. Please install it using: pip install pandas")
+import pandas as pd
 from datetime import datetime
 
 def calculate_aqi_pm25(pm25):

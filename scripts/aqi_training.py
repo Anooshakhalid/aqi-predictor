@@ -6,7 +6,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
 
 def run_training():
-    df = pd.read_csv("data/aqi_features.csv")
+    df = pd.read_csv("data/karachi_aqi_features.csv")
 
     X = df[["pm25"]]
     y = df["aqi"]
