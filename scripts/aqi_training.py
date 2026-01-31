@@ -132,9 +132,10 @@ mr = project.get_model_registry()
 
 if best_model_name == "RandomForest":
     joblib.dump(rf, "best_model.pkl")
+    latest_version = mr.get_model("aqi_rf_model").get_latest_version().version
     best_model = mr.python.create_model(
         name="aqi_rf_model",
-        version=1,
+        version=latest_version + 1,
         description="Random Forest model for AQI prediction",
         metrics=metrics["RandomForest"]
     )
@@ -142,9 +143,10 @@ if best_model_name == "RandomForest":
 
 elif best_model_name == "Ridge":
     joblib.dump(ridge, "best_model.pkl")
+    latest_version = mr.get_model("aqi_ridge_model").get_latest_version().version
     best_model = mr.python.create_model(
         name="aqi_ridge_model",
-        version=1,
+        vversion=latest_version + 1,
         description="Ridge Regression model for AQI prediction",
         metrics=metrics["Ridge"]
     )
@@ -152,9 +154,10 @@ elif best_model_name == "Ridge":
 
 elif best_model_name == "NeuralNet":
     nn_model.save("best_model.keras")
+    latest_version = mr.get_model("aqi_nn_model").get_latest_version().version
     best_model = mr.tensorflow.create_model(
         name="aqi_nn_model",
-        version=1,
+        version=latest_version + 1,
         description="Neural Network model for AQI prediction",
         metrics=metrics["NeuralNet"]
     )
