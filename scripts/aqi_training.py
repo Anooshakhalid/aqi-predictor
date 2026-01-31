@@ -142,17 +142,22 @@ metrics = {
 }
 
 def get_next_version(mr, model_name):
+    """
+    Return the next available version number for a model in Hopsworks Model Registry.
+    If the model doesn't exist, return 1.
+    """
     try:
         model = mr.get_model(model_name)
-        versions = model.list_versions()
+        versions = model.list_versions()  # returns a list of Version objects
         if versions:
             latest_version = max(v.version for v in versions)
             return latest_version + 1
         else:
             return 1
-    except Exception as e:
-        # Model does not exist yet
+    except Exception:
+        # Model doesn't exist yet
         return 1
+
 
 
 # Set SHAP path for best model
@@ -172,7 +177,7 @@ if best_model_name == "RandomForest":
 elif best_model_name == "Ridge":
     shap_plot_path = os.path.join(shap_dir, "shap_ridge.png")
     joblib.dump(ridge, "best_model.pkl")
-    next_version = get_next_version(mr, "aqi_rf_model")
+    next_version = get_next_version(mr, "aqi_ridge_model")
     best_model = mr.python.create_model(
         name="aqi_ridge_model",
         version=next_version,
@@ -185,7 +190,7 @@ elif best_model_name == "Ridge":
 elif best_model_name == "NeuralNet":
     shap_plot_path = os.path.join(shap_dir, "shap_nn.png")
     nn_model.save("best_model.keras")
-    next_version = get_next_version(mr, "aqi_rf_model")
+    next_version = get_next_version(mr, "aqi_nn_model")
     best_model = mr.tensorflow.create_model(
         name="aqi_nn_model",
         version=next_version,
