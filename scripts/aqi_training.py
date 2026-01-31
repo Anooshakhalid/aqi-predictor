@@ -33,6 +33,7 @@ if not HOPSWORKS_API_KEY:
 project = hopsworks.login(api_key_value=HOPSWORKS_API_KEY, project="AQIPred")
 fs = project.get_feature_store()
 fg = fs.get_feature_group(name="karachi_aqishine_fg", version=1)
+mr = project.get_model_registry()
 
 # Read historical data
 df_fs = fg.read().sort_values("date")
@@ -104,17 +105,16 @@ print(f"Best model: {best_model_name}")
 shap_dir = "shap_plots"
 os.makedirs(shap_dir, exist_ok=True)
 
-mr = project.get_model_registry()
-
 def get_next_version(mr, model_name):
     try:
         model = mr.get_model(model_name)
         versions = model.list_versions()
-        if versions:
-            return max(v.version for v in versions) + 1
-        return 1
+        if len(versions) == 0:
+            return 1
+        return max([v.version for v in versions]) + 1
     except:
         return 1
+
 
 # --------- RANDOM FOREST ----------
 if best_model_name == "RandomForest":
@@ -133,10 +133,11 @@ if best_model_name == "RandomForest":
 
     joblib.dump(rf, "best_model.pkl")
     next_version = get_next_version(mr, "aqi_rf_model")
+    print("Saving RF as version:", next_version)
 
     best_model = mr.python.create_model(
         name="aqi_rf_model",
-        version=next_version,
+        version= next_version,
         description="Random Forest model for AQI prediction",
         metrics=metrics["RandomForest"]
     )
@@ -160,6 +161,7 @@ elif best_model_name == "Ridge":
 
     joblib.dump(ridge, "best_model.pkl")
     next_version = get_next_version(mr, "aqi_ridge_model")
+    print("Saving RF as version:", next_version)
 
     best_model = mr.python.create_model(
         name="aqi_ridge_model",
@@ -190,6 +192,7 @@ elif best_model_name == "NeuralNet":
 
     nn_model.save("best_model.keras")
     next_version = get_next_version(mr, "aqi_nn_model")
+    print("Saving RF as version:", next_version)
 
     best_model = mr.tensorflow.create_model(
         name="aqi_nn_model",
