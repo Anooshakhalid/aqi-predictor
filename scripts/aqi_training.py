@@ -145,7 +145,7 @@ metrics = {
 if best_model_name == "RandomForest":
     shap_plot_path = os.path.join(shap_dir, "shap_rf.png")
     joblib.dump(rf, "best_model.pkl")
-    latest_version = mr.get_model("aqi_rf_model").get_latest_version().version
+    latest_version = mr.get_model("aqi_rf_model").latest_version
     best_model = mr.python.create_model(
         name="aqi_rf_model",
         version=latest_version + 1,
@@ -158,7 +158,7 @@ if best_model_name == "RandomForest":
 elif best_model_name == "Ridge":
     shap_plot_path = os.path.join(shap_dir, "shap_ridge.png")
     joblib.dump(ridge, "best_model.pkl")
-    latest_version = mr.get_model("aqi_ridge_model").get_latest_version().version
+    latest_version = mr.get_model("aqi_ridge_model").latest_version
     best_model = mr.python.create_model(
         name="aqi_ridge_model",
         version=latest_version + 1,
@@ -171,7 +171,7 @@ elif best_model_name == "Ridge":
 elif best_model_name == "NeuralNet":
     shap_plot_path = os.path.join(shap_dir, "shap_nn.png")
     nn_model.save("best_model.keras")
-    latest_version = mr.get_model("aqi_nn_model").get_latest_version().version
+    latest_version = mr.get_model("aqi_nn_model").latest_version
     best_model = mr.tensorflow.create_model(
         name="aqi_nn_model",
         version=latest_version + 1,
