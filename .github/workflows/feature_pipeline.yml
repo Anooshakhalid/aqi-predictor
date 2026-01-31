@@ -26,4 +26,4 @@ jobs:
       run: python scripts/aqi_features.py
       env:
         HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
-        AQICN_API_KEY: ${{ secrets.AQICN_API_KEY }}
+        WAQI_API_KEY: ${{ secrets.WAQI_API_KEY }}
