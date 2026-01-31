@@ -107,13 +107,14 @@ os.makedirs(shap_dir, exist_ok=True)
 
 def get_next_version(mr, model_name):
     try:
-        model = mr.get_model(model_name)
-        versions = model.list_versions()
-        if len(versions) == 0:
+        models = mr.get_models(name=model_name)
+        if len(models) == 0:
             return 1
-        return max([v.version for v in versions]) + 1
+        versions = [m.version for m in models]
+        return max(versions) + 1
     except:
         return 1
+
 
 
 # --------- RANDOM FOREST ----------
@@ -134,6 +135,7 @@ if best_model_name == "RandomForest":
     joblib.dump(rf, "best_model.pkl")
     next_version = get_next_version(mr, "aqi_rf_model")
     print("Saving RF as version:", next_version)
+
 
     best_model = mr.python.create_model(
         name="aqi_rf_model",
