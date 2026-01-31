@@ -96,11 +96,16 @@ for name, (model, pred, scaled) in models.items():
 best_model_name = max(metrics, key=lambda x: metrics[x]["R2"])
 print(f"Best model: {best_model_name}")
 
+import os
+import matplotlib.pyplot as plt
+
 # -------------------------
 # 7. SHAP explainability
 # -------------------------
 shap_dir = "shap_plots"
 os.makedirs(shap_dir, exist_ok=True)
+
+models = ["RandomForest", "Ridge", "NeuralNet"]
 
 if "RandomForest" in models:
     explainer_rf = shap.TreeExplainer(rf)
@@ -130,7 +135,15 @@ if "NeuralNet" in models:
 # -------------------------
 mr = project.get_model_registry()
 
+metrics = {
+    "RandomForest": {"R2": r2_score(y_test, rf_pred), "MAE": mean_absolute_error(y_test, rf_pred)},
+    "Ridge": {"R2": r2_score(y_test, ridge_pred), "MAE": mean_absolute_error(y_test, ridge_pred)},
+    "NeuralNet": {"R2": r2_score(y_test, nn_pred), "MAE": mean_absolute_error(y_test, nn_pred)}
+}
+
+# Set SHAP path for best model
 if best_model_name == "RandomForest":
+    shap_plot_path = os.path.join(shap_dir, "shap_rf.png")
     joblib.dump(rf, "best_model.pkl")
     latest_version = mr.get_model("aqi_rf_model").get_latest_version().version
     best_model = mr.python.create_model(
@@ -140,19 +153,23 @@ if best_model_name == "RandomForest":
         metrics=metrics["RandomForest"]
     )
     best_model.save("best_model.pkl")
+    best_model.save_artifact("shap_plot", shap_plot_path)
 
 elif best_model_name == "Ridge":
+    shap_plot_path = os.path.join(shap_dir, "shap_ridge.png")
     joblib.dump(ridge, "best_model.pkl")
     latest_version = mr.get_model("aqi_ridge_model").get_latest_version().version
     best_model = mr.python.create_model(
         name="aqi_ridge_model",
-        vversion=latest_version + 1,
+        version=latest_version + 1,
         description="Ridge Regression model for AQI prediction",
         metrics=metrics["Ridge"]
     )
     best_model.save("best_model.pkl")
+    best_model.save_artifact("shap_plot", shap_plot_path)
 
 elif best_model_name == "NeuralNet":
+    shap_plot_path = os.path.join(shap_dir, "shap_nn.png")
     nn_model.save("best_model.keras")
     latest_version = mr.get_model("aqi_nn_model").get_latest_version().version
     best_model = mr.tensorflow.create_model(
@@ -162,5 +179,8 @@ elif best_model_name == "NeuralNet":
         metrics=metrics["NeuralNet"]
     )
     best_model.save("best_model.keras")
+    best_model.save_artifact("shap_plot", shap_plot_path)
 
 print(f"Best model {best_model_name} saved to Hopsworks Model Registry successfully!")
+
+
