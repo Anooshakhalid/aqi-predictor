@@ -144,7 +144,8 @@ if best_model_name == "RandomForest":
         metrics=metrics["RandomForest"]
     )
     best_model.save("best_model.pkl")
-    best_model.save_artifact("shap_plot", shap_plot_path)
+    best_model.upload_artifact(shap_plot_path, artifact_path="shap")
+
 
 # --------- RIDGE ----------
 elif best_model_name == "Ridge":
@@ -172,7 +173,8 @@ elif best_model_name == "Ridge":
         metrics=metrics["Ridge"]
     )
     best_model.save("best_model.pkl")
-    best_model.save_artifact("shap_plot", shap_plot_path)
+    best_model.upload_artifact(shap_plot_path, artifact_path="shap")
+
 
 # --------- NEURAL NET ----------
 elif best_model_name == "NeuralNet":
@@ -203,6 +205,7 @@ elif best_model_name == "NeuralNet":
         metrics=metrics["NeuralNet"]
     )
     best_model.save("best_model.keras")
-    best_model.save_artifact("shap_plot", shap_plot_path)
+    best_model.upload_artifact(shap_plot_path, artifact_path="shap")
+
 
 print(f"Best model {best_model_name} saved with SHAP to Hopsworks!")
