@@ -12,6 +12,7 @@ HOPSWORKS_API_KEY = os.getenv("HOPSWORKS_API_KEY")
 PROJECT = "AQIPred"
 FEATURE_VIEW = "aqi_features_fv"
 FV_VERSION = 1
+MODEL_NAME = "your_model_name"  # <-- replace with your model name
 
 # -------------------------
 # Login
@@ -25,31 +26,20 @@ fs = project.get_feature_store()
 mr = project.get_model_registry()
 
 # -------------------------
-# Pick best model automatically
+# Fetch latest model
 # -------------------------
-def get_best_model(mr):
-    models = []
-    for name in ["aqi_rf_model", "nn_aqi_model", "ridge_aqi_model"]:
-        try:
-            models.append(mr.get_model(name))  # gets latest
-        except:
-            pass
+latest_model = mr.get_model(MODEL_NAME)  # latest version automatically
+print(f"Latest model: {latest_model.name}, version: {latest_model.version}")
 
-    if not models:
-        raise Exception("No models found in registry")
-
-    best = max(models, key=lambda m: m.metrics.get("R2", 0))
-    return best
-
-best_model_meta = get_best_model(mr)
-print(f"Loaded model: {best_model_meta.name} v{best_model_meta.version}")
+r2 = latest_model.metrics.get("R2", None) if latest_model.metrics else None
+print(f"R2: {r2}")
 
 # -------------------------
 # Download + load model
 # -------------------------
-model_dir = best_model_meta.download()
+model_dir = latest_model.download()
 
-if best_model_meta.name == "nn_aqi_model":
+if latest_model.name == "nn_aqi_model":
     model = load_model(os.path.join(model_dir, "best_model.keras"))
 else:
     model = joblib.load(os.path.join(model_dir, "best_model.pkl"))
@@ -71,9 +61,9 @@ def root():
 @app.get("/model_info")
 def model_info():
     return {
-        "name": best_model_meta.name,
-        "version": best_model_meta.version,
-        "metrics": best_model_meta.metrics
+        "name": latest_model.name,
+        "version": latest_model.version,
+        "metrics": latest_model.metrics
     }
 
 @app.get("/predict")
