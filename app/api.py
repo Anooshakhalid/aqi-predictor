@@ -25,13 +25,27 @@ fs = project.get_feature_store()
 mr = project.get_model_registry()
 
 # -------------------------
-# Select latest model by creation date
+# Get all model names
 # -------------------------
-all_models = mr.get_models()
+all_model_names = mr.get_model_names()
 
-if not all_models:
+if not all_model_names:
     raise RuntimeError("No models found in Model Registry")
 
+# -------------------------
+# Fetch all model versions for all names
+# -------------------------
+all_models = []
+for name in all_model_names:
+    models_of_name = mr.get_models(name=name)  # must provide name
+    all_models.extend(models_of_name)
+
+if not all_models:
+    raise RuntimeError("No model versions found in Model Registry")
+
+# -------------------------
+# Pick the latest model by creation timestamp
+# -------------------------
 latest_model = max(all_models, key=lambda m: m.created)
 
 print(
