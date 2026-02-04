@@ -25,23 +25,30 @@ fs = project.get_feature_store()
 mr = project.get_model_registry()
 
 # -------------------------
-# Get all model names
+# Candidate model names
 # -------------------------
-all_model_names = mr.get_model_names()
+candidate_model_names = ["rf_aqi_model", "ridge_aqi_model", "nn_aqi_model"]  # your 3 models
 
-if not all_model_names:
-    raise RuntimeError("No models found in Model Registry")
-
-# -------------------------
-# Fetch all model versions for all names
-# -------------------------
 all_models = []
-for name in all_model_names:
-    models_of_name = mr.get_models(name=name)  # must provide name
-    all_models.extend(models_of_name)
+
+for name in candidate_model_names:
+    try:
+        models_of_name = mr.get_models(name=name)
+        all_models.extend(models_of_name)
+    except Exception as e:
+        print(f"Warning: Could not fetch models for {name}: {e}")
 
 if not all_models:
-    raise RuntimeError("No model versions found in Model Registry")
+    raise RuntimeError("No models found in Model Registry")
+
+# Pick the latest by creation date
+latest_model = max(all_models, key=lambda m: m.created)
+
+print(
+    f"Latest model selected: {latest_model.name} "
+    f"(v{latest_model.version}) | created: {latest_model.created}"
+)
+
 
 # -------------------------
 # Pick the latest model by creation timestamp
