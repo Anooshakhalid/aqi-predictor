@@ -2,7 +2,7 @@ import os, hopsworks, joblib, pandas as pd
 from fastapi import FastAPI
 
 HOPSWORKS_API_KEY = os.getenv("HOPSWORKS_API_KEY")
-PROJECT = "your_project"
+PROJECT = "AQIPred"
 
 project = hopsworks.login(api_key_value=HOPSWORKS_API_KEY, project=PROJECT)
 fs = project.get_feature_store()
