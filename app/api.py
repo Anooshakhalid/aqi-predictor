@@ -41,14 +41,6 @@ for name in candidate_model_names:
 if not all_models:
     raise RuntimeError("No models found in Model Registry")
 
-# Pick the latest by creation date
-latest_model = max(all_models, key=lambda m: m.created)
-
-print(
-    f"Latest model selected: {latest_model.name} "
-    f"(v{latest_model.version}) | created: {latest_model.created}"
-)
-
 
 # -------------------------
 # Pick the latest model by creation timestamp
@@ -66,12 +58,17 @@ print(
 model_dir = latest_model.download()
 
 if "nn" in latest_model.name.lower():
-    # TensorFlow / Keras model
-    model = load_model(os.path.join(model_dir, "best_model.keras"))
+    # Check if 'best_model.keras' exists, otherwise use folder path
+    keras_path = os.path.join(model_dir, "best_model.keras")
+    if os.path.exists(keras_path):
+        model = load_model(keras_path)
+    else:
+        # fallback: load the folder directly (SavedModel format)
+        model = load_model(model_dir)
 else:
-    # scikit-learn / joblib model
-    model = joblib.load(os.path.join(model_dir, "best_model.pkl"))
-
+    # scikit-learn / joblib
+    pkl_path = os.path.join(model_dir, "best_model.pkl")
+    model = joblib.load(pkl_path)
 # -------------------------
 # Load Feature View
 # -------------------------
