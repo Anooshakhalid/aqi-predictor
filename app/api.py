@@ -4,6 +4,7 @@ import hopsworks
 import pandas as pd
 from fastapi import FastAPI
 from tensorflow.keras.models import load_model
+from tensorflow import keras
 
 # -------------------------
 # Config
@@ -58,17 +59,24 @@ print(
 model_dir = latest_model.download()
 
 if "nn" in latest_model.name.lower():
-    # Check if 'best_model.keras' exists, otherwise use folder path
-    keras_path = os.path.join(model_dir, "best_model.keras")
-    if os.path.exists(keras_path):
-        model = load_model(keras_path)
+    # Check if .keras or .h5 exists
+    keras_file = os.path.join(model_dir, "best_model.keras")
+    h5_file = os.path.join(model_dir, "best_model.h5")
+
+    if os.path.exists(keras_file):
+        model = keras.models.load_model(keras_file)
+    elif os.path.exists(h5_file):
+        model = keras.models.load_model(h5_file)
     else:
-        # fallback: load the folder directly (SavedModel format)
-        model = load_model(model_dir)
+        # Legacy TF SavedModel folder — Keras 3 requires TFSMLayer
+        model = keras.Sequential([
+            keras.layers.TFSMLayer(model_dir, call_endpoint="serving_default")
+        ])
 else:
-    # scikit-learn / joblib
-    pkl_path = os.path.join(model_dir, "best_model.pkl")
-    model = joblib.load(pkl_path)
+    import joblib
+    pkl_file = os.path.join(model_dir, "best_model.pkl")
+    model = joblib.load(pkl_file)
+
 # -------------------------
 # Load Feature View
 # -------------------------
