@@ -1,12 +1,8 @@
-import requests
-import streamlit as st
+import requests, streamlit as st
 
-st.set_page_config(page_title="AQI Dashboard", layout="wide")
-st.title("🌍 AQI Prediction Dashboard")
+st.title("🌫 Karachi AQI Predictor")
 
-if st.button("Get 3-Day AQI Forecast"):
+if st.button("Predict Next 3 Days"):
     res = requests.get("http://localhost:8000/predict")
-    preds = res.json()["next_3_days_aqi"]
-
-    for i, val in enumerate(preds, 1):
-        st.metric(f"Day {i}", f"{val} AQI")
+    for i, v in enumerate(res.json()["forecast"], 1):
+        st.metric(f"Day {i}", f"{v}")
