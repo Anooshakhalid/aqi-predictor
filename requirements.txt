@@ -27,3 +27,8 @@ nbconvert==7.7.4
 # Plotting
 matplotlib==3.8.1
 seaborn==0.12.2  # Downgraded to a version compatible with Python 3.12
+
+
+fastapi
+uvicorn
+streamlit==1.28.0
