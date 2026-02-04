@@ -12,10 +12,9 @@ HOPSWORKS_API_KEY = os.getenv("HOPSWORKS_API_KEY")
 PROJECT = "AQIPred"
 FEATURE_VIEW = "aqi_features_fv"
 FV_VERSION = 1
-MODEL_NAME = "your_model_name"  # <-- replace with your model name
 
 # -------------------------
-# Login
+# Login to Hopsworks & Feature Store
 # -------------------------
 project = hopsworks.login(
     project=PROJECT,
@@ -26,22 +25,30 @@ fs = project.get_feature_store()
 mr = project.get_model_registry()
 
 # -------------------------
-# Fetch latest model
+# Select latest model by creation date
 # -------------------------
-latest_model = mr.get_model(MODEL_NAME)  # latest version automatically
-print(f"Latest model: {latest_model.name}, version: {latest_model.version}")
+all_models = mr.get_models()
 
-r2 = latest_model.metrics.get("R2", None) if latest_model.metrics else None
-print(f"R2: {r2}")
+if not all_models:
+    raise RuntimeError("No models found in Model Registry")
+
+latest_model = max(all_models, key=lambda m: m.created)
+
+print(
+    f"Latest model selected: {latest_model.name} "
+    f"(v{latest_model.version}) | created: {latest_model.created}"
+)
 
 # -------------------------
-# Download + load model
+# Download and load model
 # -------------------------
 model_dir = latest_model.download()
 
-if latest_model.name == "nn_aqi_model":
+if "nn" in latest_model.name.lower():
+    # TensorFlow / Keras model
     model = load_model(os.path.join(model_dir, "best_model.keras"))
 else:
+    # scikit-learn / joblib model
     model = joblib.load(os.path.join(model_dir, "best_model.pkl"))
 
 # -------------------------
@@ -50,9 +57,9 @@ else:
 fv = fs.get_feature_view(FEATURE_VIEW, version=FV_VERSION)
 
 # -------------------------
-# FastAPI
+# FastAPI App
 # -------------------------
-app = FastAPI()
+app = FastAPI(title="AQI Predictor API")
 
 @app.get("/")
 def root():
@@ -68,6 +75,7 @@ def model_info():
 
 @app.get("/predict")
 def predict():
+    # Get latest feature row
     df = fv.get_batch_data().sort_values("date").tail(1)
     X = df.drop(columns=["date", "aqi"])
 
@@ -76,8 +84,8 @@ def predict():
         y = float(model.predict(X)[0])
         preds.append(round(y, 2))
 
-        # update lags
+        # Update lags for next prediction
         X["aqi_lag_3"] = X["aqi_lag_1"]
         X["aqi_lag_1"] = y
 
-    return {"forecast": preds}
+    return {"forecast_3_days": preds}
