@@ -25,35 +25,16 @@ fs = project.get_feature_store()
 mr = project.get_model_registry()
 
 # -------------------------
-# Candidate model names
+# Pick newest model by version
 # -------------------------
-candidate_model_names = [
-    "rf_aqi_model",
-    "ridge_aqi_model",
-    "nn_aqi_model",
-    "aqi_rf_model"   # newest one (v5)
-]
-
-all_models = []
-for name in candidate_model_names:
-    try:
-        models = mr.get_models(name=name)
-        all_models.extend(models)
-    except:
-        pass
+all_models = mr.get_models()
 
 if not all_models:
-    raise RuntimeError("❌ No models found in Model Registry")
+    raise RuntimeError("❌ No models found in registry")
 
-# -------------------------
-# Pick the truly latest model
-# -------------------------
-latest_model = max(all_models, key=lambda m: m.creation_time)
+latest_model = max(all_models, key=lambda m: m.version)
 
-print(
-    f"✅ Latest model selected: {latest_model.name} "
-    f"(v{latest_model.version}) | created: {latest_model.creation_time}"
-)
+print(f"✅ Using model: {latest_model.name} v{latest_model.version}")
 
 # -------------------------
 # Download model
@@ -94,7 +75,6 @@ def model_info():
     return {
         "name": latest_model.name,
         "version": latest_model.version,
-        "created": str(latest_model.creation_time),
         "metrics": latest_model.metrics
     }
 
