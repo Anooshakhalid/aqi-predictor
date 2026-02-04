@@ -58,24 +58,26 @@ print(
 # -------------------------
 model_dir = latest_model.download()
 
-if "nn" in latest_model.name.lower():
-    # Check if .keras or .h5 exists
-    keras_file = os.path.join(model_dir, "best_model.keras")
-    h5_file = os.path.join(model_dir, "best_model.h5")
+files = os.listdir(model_dir)
+print("Files in model dir:", files)
 
-    if os.path.exists(keras_file):
-        model = keras.models.load_model(keras_file)
-    elif os.path.exists(h5_file):
-        model = keras.models.load_model(h5_file)
+if "nn" in latest_model.name.lower():
+    if "best_model.keras" in files:
+        model = keras.models.load_model(os.path.join(model_dir, "best_model.keras"))
+    elif "best_model.h5" in files:
+        model = keras.models.load_model(os.path.join(model_dir, "best_model.h5"))
     else:
-        # Legacy TF SavedModel folder — Keras 3 requires TFSMLayer
-        model = keras.Sequential([
-            keras.layers.TFSMLayer(model_dir, call_endpoint="serving_default")
-        ])
+        # fallback: maybe NN was saved as joblib
+        if "best_model.pkl" in files:
+            model = joblib.load(os.path.join(model_dir, "best_model.pkl"))
+        else:
+            raise RuntimeError(f"Cannot find a loadable file for NN model in {model_dir}")
 else:
-    import joblib
-    pkl_file = os.path.join(model_dir, "best_model.pkl")
-    model = joblib.load(pkl_file)
+    # scikit-learn / joblib
+    if "best_model.pkl" in files:
+        model = joblib.load(os.path.join(model_dir, "best_model.pkl"))
+    else:
+        raise RuntimeError(f"Cannot find a joblib .pkl file for model in {model_dir}")
 
 # -------------------------
 # Load Feature View
