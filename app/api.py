@@ -3,7 +3,6 @@ import joblib
 import hopsworks
 import pandas as pd
 from fastapi import FastAPI
-from tensorflow.keras.models import load_model
 from tensorflow import keras
 
 # -------------------------
@@ -26,12 +25,11 @@ fs = project.get_feature_store()
 mr = project.get_model_registry()
 
 # -------------------------
-# Candidate model names
+# Candidate model names (your 3 models)
 # -------------------------
-candidate_model_names = ["rf_aqi_model", "ridge_aqi_model", "nn_aqi_model"]  # your 3 models
+candidate_model_names = ["rf_aqi_model", "ridge_aqi_model", "nn_aqi_model"]
 
 all_models = []
-
 for name in candidate_model_names:
     try:
         models_of_name = mr.get_models(name=name)
@@ -41,7 +39,6 @@ for name in candidate_model_names:
 
 if not all_models:
     raise RuntimeError("No models found in Model Registry")
-
 
 # -------------------------
 # Pick the latest model by creation timestamp
@@ -54,30 +51,34 @@ print(
 )
 
 # -------------------------
-# Download and load model
+# Download model artifacts
 # -------------------------
 model_dir = latest_model.download()
-
 files = os.listdir(model_dir)
-print("Files in model dir:", files)
+print("Files in downloaded model folder:", files)
 
-if "nn" in latest_model.name.lower():
-    if "best_model.keras" in files:
-        model = keras.models.load_model(os.path.join(model_dir, "best_model.keras"))
-    elif "best_model.h5" in files:
-        model = keras.models.load_model(os.path.join(model_dir, "best_model.h5"))
-    else:
-        # fallback: maybe NN was saved as joblib
-        if "best_model.pkl" in files:
-            model = joblib.load(os.path.join(model_dir, "best_model.pkl"))
-        else:
-            raise RuntimeError(f"Cannot find a loadable file for NN model in {model_dir}")
-else:
-    # scikit-learn / joblib
-    if "best_model.pkl" in files:
-        model = joblib.load(os.path.join(model_dir, "best_model.pkl"))
-    else:
-        raise RuntimeError(f"Cannot find a joblib .pkl file for model in {model_dir}")
+# -------------------------
+# Robust model loader
+# -------------------------
+def load_latest_model(model_dir, model_name):
+    files = os.listdir(model_dir)
+    for f in files:
+        path = os.path.join(model_dir, f)
+        if f.endswith(".pkl"):
+            return joblib.load(path)
+        elif f.endswith(".keras") or f.endswith(".h5"):
+            return keras.models.load_model(path)
+    # If nothing found, fallback: try first file (inference-only)
+    if files:
+        first_file = os.path.join(model_dir, files[0])
+        if first_file.endswith(".pkl"):
+            return joblib.load(first_file)
+        elif first_file.endswith(".keras") or first_file.endswith(".h5"):
+            return keras.models.load_model(first_file)
+    raise RuntimeError(f"Cannot find a loadable model file in {model_dir} for {model_name}")
+
+# Load model dynamically
+model = load_latest_model(model_dir, latest_model.name)
 
 # -------------------------
 # Load Feature View
