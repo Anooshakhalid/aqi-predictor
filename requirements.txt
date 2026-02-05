@@ -1,3 +1,6 @@
+--upgrade pip setuptools wheel
+
+
 # Data & HTTP requests
 pandas==2.1.1
 numpy==1.26.4
