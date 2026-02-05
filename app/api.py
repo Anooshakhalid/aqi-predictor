@@ -5,6 +5,7 @@ import pandas as pd
 from fastapi import FastAPI
 from tensorflow import keras
 
+
 # -------------------------
 # Config
 # -------------------------
@@ -13,7 +14,7 @@ PROJECT = "AQIPred"
 FEATURE_VIEW = "aqi_features_fv"
 FV_VERSION = 1
 
-# 🔒 Exact model names from your registry
+# Exact model names from the registry
 CANDIDATE_MODELS = [
     "ridge_aqi_model",
     "nn_aqi_model",
@@ -57,7 +58,7 @@ print(f"✅ Using model: {latest_model.name} v{latest_model.version}")
 # Download
 # -------------------------
 model_dir = latest_model.download()
-print("📁 Files:", os.listdir(model_dir))
+print("Files:", os.listdir(model_dir))
 
 # -------------------------
 # Load model
@@ -69,7 +70,7 @@ def load_model(model_dir):
             return joblib.load(path)
         elif f.endswith(".keras") or f.endswith(".h5"):
             return keras.models.load_model(path)
-    raise RuntimeError("❌ No loadable model file")
+    raise RuntimeError("No loadable model file")
 
 model = load_model(model_dir)
 
