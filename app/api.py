@@ -25,14 +25,25 @@ fs = project.get_feature_store()
 mr = project.get_model_registry()
 
 # -------------------------
-# Pick newest model by version
+# Get newest model (SDK compatible)
 # -------------------------
-all_models = mr.get_models()
+model_names = mr.get_model_names()
 
-if not all_models:
+if not model_names:
     raise RuntimeError("❌ No models found in registry")
 
-latest_model = max(all_models, key=lambda m: m.version)
+latest_model = None
+latest_version = -1
+
+for name in model_names:
+    versions = mr.get_models(name)
+    for m in versions:
+        if m.version > latest_version:
+            latest_version = m.version
+            latest_model = m
+
+if latest_model is None:
+    raise RuntimeError("❌ No models discovered")
 
 print(f"✅ Using model: {latest_model.name} v{latest_model.version}")
 
@@ -75,6 +86,7 @@ def model_info():
     return {
         "name": latest_model.name,
         "version": latest_model.version,
+        "created": str(latest_model.creation_time),
         "metrics": latest_model.metrics
     }
 
