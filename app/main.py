@@ -87,6 +87,7 @@ except:
         description="3-day AQI forecast for Karachi",
         primary_key=["date"],
         online_enabled=True
+        offline_enabled=True
     )
 
 # -------------------------
