@@ -13,7 +13,7 @@ st.title("🌫 Karachi AQI Predictor")
 # -------------------------
 # Config
 # -------------------------
-HOPSWORKS_API_KEY = st.secrets.get("HOPSWORKS_API_KEY")  # Use Streamlit secrets
+HOPSWORKS_API_KEY = os.getenv("HOPSWORKS_API_KEY") # Use Streamlit secrets
 PROJECT = "AQIPred"
 FEATURE_VIEW = "aqi_features_fv"
 FV_VERSION = 1
