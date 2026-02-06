@@ -69,6 +69,10 @@ fv = fs.get_feature_view(FEATURE_VIEW, version=FV_VERSION)
 df = fv.get_batch_data().sort_values("date").tail(1)
 X = df.drop(columns=["date", "aqi"], errors="ignore")
 
+if hasattr(model, "feature_names_in_"):
+    print("MODEL EXPECTS:", list(model.feature_names_in_))
+
+
 # -------------------------
 # 3-day forecast
 # -------------------------
