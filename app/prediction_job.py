@@ -89,9 +89,9 @@ if forecast_fg is None:
         version=1,
         description="3-day AQI forecast for Karachi",
         primary_key=["date"],
-        online_enabled=True,
-        offline_enabled=True
+        online_enabled=True
     )
+
 
 # -------------------------
 # Fetch latest feature row
