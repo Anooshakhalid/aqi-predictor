@@ -88,9 +88,10 @@ if forecast_fg is None:
         name=FORECAST_FG,
         version=1,
         description="3-day AQI forecast for Karachi",
-        primary_key=["date"],
-        online_enabled=True
+        primary_key=None,  # No PK needed for offline
+        online_enabled=False  # offline only
     )
+
 
 
 # -------------------------
