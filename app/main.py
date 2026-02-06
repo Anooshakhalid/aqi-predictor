@@ -2,9 +2,10 @@ import streamlit as st
 import hopsworks
 import pandas as pd
 import os
+from datetime import datetime
 
 st.set_page_config(page_title="🌫 Karachi AQI Forecast", layout="centered")
-st.title("🌫 Karachi AQI 3-Day AQI Forecast")
+st.title("🌫 Karachi AQI 3-Day Forecast")
 
 # -------------------------
 # Config
@@ -32,8 +33,10 @@ try:
     else:
         st.subheader("Latest AQI Forecast")
         for i, row in df.tail(3).iterrows():
+            # Convert string to datetime to get day name
+            day_name = datetime.strptime(row["date"], "%Y-%m-%d").strftime("%A")
             st.metric(
-                label=row["date"].strftime("%A"),
+                label=day_name,
                 value=f"{row['pred_aqi']}"
             )
 except Exception as e:
