@@ -4,35 +4,34 @@ import pandas as pd
 import os
 
 # --------------------------------
-# Page Config
+# Page Config (wide is IMPORTANT)
 # --------------------------------
 st.set_page_config(
     page_title="Karachi AQI Dashboard",
     page_icon="🌫️",
-    layout="centered"
+    layout="wide"
 )
 
 # --------------------------------
-# Custom CSS (Aesthetic)
+# Custom CSS
 # --------------------------------
 st.markdown("""
 <style>
-    .main-title {
-        font-size: 40px;
+    .title {
+        font-size: 42px;
         font-weight: 700;
         text-align: center;
-        color: #1f2937;
     }
-    .sub {
+    .subtitle {
         text-align: center;
         color: #6b7280;
-        margin-bottom: 30px;
+        margin-bottom: 20px;
     }
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown("<div class='main-title'>Karachi AQI Dashboard</div>", unsafe_allow_html=True)
-st.markdown("<div class='sub'>Real-time Air Quality Insights & Forecast</div>", unsafe_allow_html=True)
+st.markdown("<div class='title'>Karachi AQI Dashboard</div>", unsafe_allow_html=True)
+st.markdown("<div class='subtitle'>Live Air Quality & 3-Day Forecast</div>", unsafe_allow_html=True)
 
 # --------------------------------
 # Config
@@ -55,17 +54,17 @@ fs = project.get_feature_store()
 # --------------------------------
 def aqi_status(aqi):
     if aqi <= 50:
-        return "🟢 Good", "#16a34a"
+        return "Good", "#22c55e"
     elif aqi <= 100:
-        return "🟡 Moderate", "#facc15"
+        return "Moderate", "#facc15"
     elif aqi <= 150:
-        return "🟠 Unhealthy", "#fb923c"
+        return "Unhealthy", "#fb923c"
     else:
-        return "🔴 Severe", "#dc2626"
+        return "Severe", "#ef4444"
 
-# --------------------------------
-# Current AQI Section
-# --------------------------------
+# =================================
+# ROW 1 — CURRENT AQI (HORIZONTAL)
+# =================================
 st.markdown("Current AQI")
 
 try:
@@ -76,20 +75,23 @@ try:
         latest_aqi = int(df_aqi.iloc[0]["aqi"])
         status, color = aqi_status(latest_aqi)
 
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns([1, 1, 2])
 
+        # AQI Value
         with col1:
-            st.metric("AQI Value", latest_aqi)
+            st.metric("AQI", latest_aqi)
 
+        # Status
         with col2:
             st.markdown(
                 f"<h3 style='color:{color}'>{status}</h3>",
                 unsafe_allow_html=True
             )
 
-        # AQI Trend Chart (no date labels)
-        st.markdown("#### AQI Trend")
-        st.line_chart(df_aqi["aqi"].head(30))
+        # Trend (horizontal space)
+        with col3:
+            st.caption("Recent Trend")
+            st.line_chart(df_aqi["aqi"].head(20))
 
     else:
         st.warning("No AQI data available yet.")
@@ -97,20 +99,20 @@ try:
 except Exception as e:
     st.error(f"Failed to load AQI data: {e}")
 
-# --------------------------------
-# Forecast Section
-# --------------------------------
+# =================================
+# ROW 2 — FORECAST (HORIZONTAL)
+# =================================
 st.markdown("---")
-st.markdown("AQI Forecast")
+st.markdown("3-Day Forecast")
 
 try:
     forecast_fg = fs.get_feature_group(FORECAST_FG, version=1)
     df_forecast = forecast_fg.read()
 
     if not df_forecast.empty:
-        cols = st.columns(len(df_forecast.tail(3)))
+        fcols = st.columns(3)
 
-        for col, (_, row) in zip(cols, df_forecast.tail(3).iterrows()):
+        for col, (_, row) in zip(fcols, df_forecast.tail(3).iterrows()):
             forecast_aqi = int(row["pred_aqi"])
             status, color = aqi_status(forecast_aqi)
 
@@ -126,8 +128,4 @@ try:
 except Exception as e:
     st.error(f"Failed to load forecast data: {e}")
 
-# --------------------------------
-# Footer
-# --------------------------------
-st.markdown("---")
-st.caption("🚀 AQI Forecasting System • Powered by Hopsworks & Streamlit")
+
