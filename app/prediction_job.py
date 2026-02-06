@@ -88,8 +88,9 @@ if forecast_fg is None:
     name="aqi_forecast_fg",
     version=1,
     description="3-day AQI forecast for Karachi",
-    primary_key=None,  # no PK
-    online_enabled=False  # offline only
+    primary_key=["date"],   # date as string PK
+    online_enabled=True     # keeps it online if needed
+
 )
 
 
@@ -129,6 +130,10 @@ forecast_df = pd.DataFrame({
 # -------------------------
 # Insert into Feature Store
 # -------------------------
+forecast_df = pd.DataFrame({
+    "date": [(pd.Timestamp.today() + pd.Timedelta(days=i)).strftime("%Y-%m-%d") for i in range(1, 4)],
+    "pred_aqi": preds
+})
 forecast_fg.insert(forecast_df, write_options={"wait_for_job": True})
 print("Forecast inserted into Feature Store:", FORECAST_FG)
 print("3-Day AQI Forecast:", preds)
