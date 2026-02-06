@@ -134,6 +134,6 @@ forecast_df = pd.DataFrame({
     "date": [(pd.Timestamp.today() + pd.Timedelta(days=i)).strftime("%Y-%m-%d") for i in range(1, 4)],
     "pred_aqi": preds
 })
-forecast_fg.insert(forecast_df, write_options={"wait_for_job": True})
+forecast_fg.insert(forecast_df, write_options={"wait_for_job": False})
 print("Forecast inserted into Feature Store:", FORECAST_FG)
 print("3-Day AQI Forecast:", preds)
