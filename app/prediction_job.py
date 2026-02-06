@@ -85,12 +85,12 @@ forecast_fg = fs.get_feature_group(name=FORECAST_FG, version=1)
 if forecast_fg is None:
     print(f"Feature group {FORECAST_FG} not found, creating it...")
     forecast_fg = fs.create_feature_group(
-        name=FORECAST_FG,
-        version=1,
-        description="3-day AQI forecast for Karachi",
-        primary_key=None,  # No PK needed for offline
-        online_enabled=False  # offline only
-    )
+    name="aqi_forecast_fg",
+    version=1,
+    description="3-day AQI forecast for Karachi",
+    primary_key=None,  # no PK
+    online_enabled=False  # offline only
+)
 
 
 
