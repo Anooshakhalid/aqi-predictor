@@ -4,18 +4,15 @@ import pandas as pd
 import os
 from datetime import datetime
 
-# -------------------------
-# Page config
-# -------------------------
-st.set_page_config(page_title="Karachi AQI Forecast", layout="wide")
+st.set_page_config(page_title="Karachi AQI Dashboard", layout="centered")
 st.title("Karachi AQI Dashboard")
 
 # -------------------------
 # Config
 # -------------------------
 PROJECT = "AQIPred"
-FEATURE_VIEW = "aqi_features_fv"
-FORECAST_FG = "aqi_forecast_fg"
+AQI_FG = "karachi_aqishine_fg"       # Original AQI data
+FORECAST_FG = "aqi_forecast_fg"      # 3-day forecast
 HOPSWORKS_API_KEY = os.getenv("HOPSWORKS_API_KEY")
 
 # -------------------------
@@ -25,41 +22,39 @@ project = hopsworks.login(api_key_value=HOPSWORKS_API_KEY, project=PROJECT)
 fs = project.get_feature_store()
 
 # -------------------------
-# Fetch today's AQI from feature view
+# Today's AQI
 # -------------------------
 try:
-    fv = fs.get_feature_view(FEATURE_VIEW, version=1)
-    today_data = fv.get_batch_data().sort_values("date").tail(1)
-    today_aqi = today_data["aqi"].values[0] if not today_data.empty else None
+    aqi_fg = fs.get_feature_group(AQI_FG, version=1)
+    df_aqi = aqi_fg.read().sort_values("date", ascending=False)
+    if not df_aqi.empty:
+        latest_aqi_row = df_aqi.iloc[0]
+        today_date = latest_aqi_row["date"]
+        today_aqi = latest_aqi_row["aqi"]
+        st.subheader("Today's AQI")
+        st.write(f"**Date:** {today_date}")
+        st.metric(label="AQI", value=f"{today_aqi}")
+    else:
+        st.warning("No AQI data available yet.")
 except Exception as e:
-    st.error(f"Error fetching today's AQI: {e}")
-    today_aqi = None
+    st.error(f"Could not read today's AQI: {e}")
 
 # -------------------------
-# Display today's AQI
-# -------------------------
-st.subheader("Current AQI in Karachi")
-if today_aqi is not None:
-    st.metric(label="Today", value=f"{today_aqi}")
-else:
-    st.warning("No data for today available.")
-
-# -------------------------
-# Read 3-day forecast
+# 3-Day Forecast
 # -------------------------
 try:
     forecast_fg = fs.get_feature_group(FORECAST_FG, version=1)
-    df = forecast_fg.read().sort_values("date")
-
-    if df.empty:
-        st.warning("No forecast available yet.")
+    df_forecast = forecast_fg.read().sort_values("date")
+    if not df_forecast.empty:
+        st.subheader("3-Day AQI Forecast")
+        for i, row in df_forecast.tail(3).iterrows():
+            # Convert string to datetime if needed
+            if isinstance(row["date"], str):
+                day_name = datetime.strptime(row["date"], "%Y-%m-%d").strftime("%A")
+            else:
+                day_name = row["date"].strftime("%A")
+            st.metric(label=day_name, value=f"{row['pred_aqi']}")
     else:
-        st.subheader("3-Day Forecast")
-        cols = st.columns(3)
-        for idx, row in df.tail(3).iterrows():
-            day_name = datetime.strptime(row["date"], "%Y-%m-%d").strftime("%A")
-            with cols[idx % 3]:
-                st.markdown(f"### {day_name}")
-                st.markdown(f"**Predicted AQI:** {row['pred_aqi']}")
+        st.warning("No forecast available yet.")
 except Exception as e:
     st.error(f"Could not read forecast: {e}")
