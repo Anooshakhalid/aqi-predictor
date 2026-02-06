@@ -104,9 +104,9 @@ X_copy = X.copy()
 
 preds = []
 
-# -------------------------
+# ------------------------
 # 3-Day Forecast
-# -------------------------
+# ------------------------
 for _ in range(3):
     if isinstance(model, keras.Model):
         y = float(model.predict(X_copy).flatten()[0])
