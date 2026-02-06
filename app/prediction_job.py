@@ -81,9 +81,9 @@ fv = fs.get_feature_view(FEATURE_VIEW, version=FV_VERSION)
 # -------------------------
 # Forecast Feature Group (for predictions)
 # -------------------------
-try:
-    forecast_fg = fs.get_feature_group(name=FORECAST_FG, version=1)
-except:
+forecast_fg = fs.get_feature_group(name=FORECAST_FG, version=1)
+if forecast_fg is None:
+    print(f"Feature group {FORECAST_FG} not found, creating it...")
     forecast_fg = fs.create_feature_group(
         name=FORECAST_FG,
         version=1,
