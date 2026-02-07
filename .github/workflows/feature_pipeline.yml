@@ -2,7 +2,7 @@ name: Feature Pipeline
 
 on:
   schedule:
-    - cron: "0 2 * * *"    # at 02:00 AM every day
+    - cron: "0 * * * *"    # at 02:00 AM every day
   workflow_dispatch:
 
 jobs:
