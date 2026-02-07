@@ -2,159 +2,214 @@ import streamlit as st
 import hopsworks
 import pandas as pd
 import os
+import plotly.express as px
 
-# ----------------------------
-# Page Config
-# ----------------------------
+# =====================================================
+# PAGE CONFIG
+# =====================================================
 st.set_page_config(
-    page_title="Karachi AQI",
-    page_icon="🌫️",
+    page_title="Karachi AQI Dashboard",
     layout="wide"
 )
 
-# ----------------------------
-# Global CSS
-# ----------------------------
+# =====================================================
+# GLOBAL STYLES (SaaS / Dashboard Look)
+# =====================================================
 st.markdown("""
 <style>
 body {
-    background-color: #0f172a;
+    background-color: #f4f6fb;
 }
 .card {
-    background: rgba(255,255,255,0.08);
+    background: white;
     border-radius: 18px;
     padding: 20px;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.25);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+    text-align: center;
 }
-.card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+.metric-title {
+    font-size: 14px;
+    color: #6b7280;
 }
-.title {
+.metric-value {
+    font-size: 34px;
+    font-weight: 700;
+    color: #111827;
+}
+.status {
+    font-size: 16px;
+    font-weight: 600;
+}
+.header {
     font-size: 42px;
     font-weight: 800;
     text-align: center;
-    color: #e5e7eb;
+    margin-bottom: 5px;
 }
-.subtitle {
+.subheader {
     text-align: center;
-    color: #9ca3af;
-    margin-bottom: 40px;
-}
-.metric-value {
-    font-size: 48px;
-    font-weight: 800;
-}
-.small {
-    color: #9ca3af;
-    font-size: 14px;
+    color: #6b7280;
+    margin-bottom: 30px;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# ----------------------------
-# Header
-# ----------------------------
-st.markdown("<div class='title'>Karachi Air Quality Dashboard</div>", unsafe_allow_html=True)
-st.markdown("<div class='subtitle'>Live AQI monitoring & short-term forecast</div>", unsafe_allow_html=True)
+# =====================================================
+# HEADER
+# =====================================================
+st.markdown("<div class='header'>Karachi AQI Dashboard</div>", unsafe_allow_html=True)
+st.markdown("<div class='subheader'>Live Air Quality Monitoring & Forecast</div>", unsafe_allow_html=True)
 
-# ----------------------------
-# Config
-# ----------------------------
+# =====================================================
+# CONFIG
+# =====================================================
 PROJECT = "AQIPred"
 AQI_FG = "karachi_aqishine_fg"
 FORECAST_FG = "aqi_forecast_fg"
 
+# =====================================================
+# HOPSWORKS LOGIN
+# =====================================================
 project = hopsworks.login(
     project=PROJECT,
     api_key_value=os.getenv("HOPSWORKS_API_KEY")
 )
 fs = project.get_feature_store()
 
-# ----------------------------
-# AQI Color Logic
-# ----------------------------
-def aqi_meta(aqi):
+# =====================================================
+# AQI STATUS FUNCTION
+# =====================================================
+def aqi_status(aqi):
     if aqi <= 50:
-        return "Good", "#22c55e"
+        return "Good", "#16a34a"
     elif aqi <= 100:
         return "Moderate", "#facc15"
     elif aqi <= 150:
         return "Unhealthy", "#fb923c"
     else:
-        return "Severe", "#ef4444"
+        return "Severe", "#dc2626"
 
-# ----------------------------
-# Load AQI Data
-# ----------------------------
+# =====================================================
+# LOAD DATA
+# =====================================================
 aqi_fg = fs.get_feature_group(AQI_FG, version=1)
-df = aqi_fg.read().sort_values("date")
-
-latest = int(df.iloc[-1]["aqi"])
-status, color = aqi_meta(latest)
-
-# ----------------------------
-# TOP ROW — CURRENT AQI
-# ----------------------------
-c1, c2, c3 = st.columns([2,1,1])
-
-with c1:
-    st.markdown(f"""
-    <div class="card">
-        <div class="small">Current AQI</div>
-        <div class="metric-value" style="color:{color}">{latest}</div>
-        <div style="color:{color}; font-weight:600">{status}</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-with c2:
-    st.markdown(f"""
-    <div class="card">
-        <div class="small">24h Average</div>
-        <div class="metric-value">{int(df["aqi"].tail(24).mean())}</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-with c3:
-    st.markdown(f"""
-    <div class="card">
-        <div class="small">Peak AQI</div>
-        <div class="metric-value">{int(df["aqi"].tail(24).max())}</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-# ----------------------------
-# TREND VISUALIZATION
-# ----------------------------
-st.markdown("AQI Trend (Recent Readings)")
-trend_df = df.tail(48)[["aqi"]]
-st.line_chart(trend_df, height=320)
-
-# ----------------------------
-# FORECAST
-# ----------------------------
-st.markdown("3-Day Forecast")
-
 forecast_fg = fs.get_feature_group(FORECAST_FG, version=1)
-forecast_df = forecast_fg.read().tail(3)
+
+df_aqi = aqi_fg.read().sort_values("date")
+df_forecast = forecast_fg.read()
+
+latest_aqi = int(df_aqi.iloc[-1]["aqi"])
+status, color = aqi_status(latest_aqi)
+
+# =====================================================
+# KPI CARDS
+# =====================================================
+col1, col2, col3, col4 = st.columns(4)
+
+with col1:
+    st.markdown(f"""
+    <div class="card">
+        <div class="metric-title">Current AQI</div>
+        <div class="metric-value">{latest_aqi}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col2:
+    st.markdown(f"""
+    <div class="card">
+        <div class="metric-title">Air Quality</div>
+        <div class="status" style="color:{color}">{status}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col3:
+    st.markdown("""
+    <div class="card">
+        <div class="metric-title">City</div>
+        <div class="metric-value">Karachi</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col4:
+    st.markdown("""
+    <div class="card">
+        <div class="metric-title">Forecast Model</div>
+        <div class="metric-value">ML-Based</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+st.markdown("")
+
+# =====================================================
+# AQI TREND (INTERACTIVE)
+# =====================================================
+st.markdown("### Air Quality Trend")
+
+df_trend = df_aqi.tail(48)  # last 48 readings
+
+fig_trend = px.line(
+    df_trend,
+    y="aqi",
+    markers=True,
+    template="plotly_white"
+)
+
+fig_trend.update_layout(
+    height=420,
+    hovermode="x unified",
+    showlegend=False,
+    xaxis_title=None,
+    yaxis_title="AQI",
+)
+
+st.plotly_chart(fig_trend, use_container_width=True)
+
+# =====================================================
+# FORECAST SECTION
+# =====================================================
+st.markdown("### 3-Day AQI Forecast")
 
 cols = st.columns(3)
 
-for col, (_, row) in zip(cols, forecast_df.iterrows()):
+for col, (_, row) in zip(cols, df_forecast.tail(3).iterrows()):
     val = int(row["pred_aqi"])
-    label, c = aqi_meta(val)
+    stat, clr = aqi_status(val)
 
     with col:
         st.markdown(f"""
         <div class="card">
-            <div class="small">Predicted AQI</div>
-            <div class="metric-value" style="color:{c}">{val}</div>
-            <div style="color:{c}; font-weight:600">{label}</div>
+            <div class="metric-title">Predicted AQI</div>
+            <div class="metric-value">{val}</div>
+            <div class="status" style="color:{clr}">{stat}</div>
         </div>
         """, unsafe_allow_html=True)
 
-# ----------------------------
-# Footer
-# ----------------------------
-st.caption("Powered by Hopsworks • Streamlit • AQI ML Pipeline")
+# =====================================================
+# LOWER VISUALS (ANALYTICS)
+# =====================================================
+colA, colB = st.columns(2)
+
+with colA:
+    fig_dist = px.histogram(
+        df_aqi,
+        x="aqi",
+        nbins=20,
+        title="AQI Distribution",
+        template="plotly_white"
+    )
+    st.plotly_chart(fig_dist, use_container_width=True)
+
+with colB:
+    df_aqi["severity"] = df_aqi["aqi"].apply(lambda x: aqi_status(x)[0])
+    fig_pie = px.pie(
+        df_aqi,
+        names="severity",
+        title="AQI Severity Breakdown"
+    )
+    st.plotly_chart(fig_pie, use_container_width=True)
+
+# =====================================================
+# FOOTER
+# =====================================================
+st.markdown("---")
+st.caption("AQI Forecasting Platform • Powered by Hopsworks & Streamlit")
