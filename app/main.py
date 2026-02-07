@@ -169,20 +169,28 @@ st.plotly_chart(fig_trend, use_container_width=True)
 # =====================================================
 st.markdown("### 3-Day AQI Forecast")
 
-cols = st.columns(3)
+df_aqi["aqi"] = pd.to_numeric(df_aqi["aqi"], errors="coerce")
+df_aqi = df_aqi.dropna(subset=["aqi"])
+df_aqi = df_aqi.sort_values("date")
 
-for col, (_, row) in zip(cols, df_forecast.tail(3).iterrows()):
-    val = int(row["pred_aqi"])
-    stat, clr = aqi_status(val)
+df_trend = df_aqi.tail(48)
 
-    with col:
-        st.markdown(f"""
-        <div class="card">
-            <div class="metric-title">Predicted AQI</div>
-            <div class="metric-value">{val}</div>
-            <div class="status" style="color:{clr}">{stat}</div>
-        </div>
-        """, unsafe_allow_html=True)
+fig_trend = px.line(
+    df_trend,
+    y="aqi",
+    markers=True,
+    template="plotly_white"
+)
+
+fig_trend.update_layout(
+    height=420,
+    hovermode="x unified",
+    showlegend=False,
+    xaxis_visible=False,
+    yaxis_title="AQI"
+)
+
+st.plotly_chart(fig_trend, use_container_width=True)
 
 # =====================================================
 # LOWER VISUALS (ANALYTICS)
