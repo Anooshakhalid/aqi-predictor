@@ -6,7 +6,7 @@ from tensorflow import keras
 from datetime import datetime, timedelta
 
 # -------------------------
-# Config
+# Configs
 # -------------------------
 HOPSWORKS_API_KEY = os.getenv("HOPSWORKS_API_KEY")
 PROJECT = "AQIPred"
