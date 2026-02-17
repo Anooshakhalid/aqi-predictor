@@ -98,16 +98,6 @@ try:
             unsafe_allow_html=True
         )
 
-        # Summary
-        st.markdown("### 📊 Last 24 Readings Summary")
-        col1, col2, col3 = st.columns(3)
-
-        with col1:
-            st.metric("Min AQI", int(df_aqi.head(24)["aqi"].min()))
-        with col2:
-            st.metric("Max AQI", int(df_aqi.head(24)["aqi"].max()))
-        with col3:
-            st.metric("Avg AQI", int(df_aqi.head(24)["aqi"].mean()))
 
     else:
         st.warning("No AQI data available yet.")
