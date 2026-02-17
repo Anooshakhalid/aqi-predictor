@@ -87,9 +87,19 @@ try:
                 unsafe_allow_html=True
             )
 
-        # AQI Trend Chart (no date labels)
-        st.markdown("#### AQI Trend")
-        st.line_chart(df_aqi["aqi"].head(30))
+    
+        # Sort by date ASCENDING for proper trend
+        df_aqi = df_aqi.sort_values("date")
+
+        # Take last 30 days
+        trend_df = df_aqi.tail(30)
+
+        # Set date as index
+        trend_df = trend_df.set_index("date")
+
+        st.markdown("#### AQI Trend (Last 30 Days)")
+        st.line_chart(trend_df["aqi"])
+
 
     else:
         st.warning("No AQI data available yet.")
