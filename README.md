@@ -70,7 +70,8 @@ The model with the **highest R² score** on the validation dataset is selected f
 Versioning is implemented so each registered model has a unique version and can be rolled back if necessary.
 
 ## Folder Structure
-```pearls-aqi-predictor/
+```
+pearls-aqi-predictor/
 │
 ├── .github/workflows/            # GitHub Actions CI/CD pipelines
 │   ├── feature_pipeline.yml
@@ -98,7 +99,8 @@ Versioning is implemented so each registered model has a unique version and can 
 ├── shap_plots/                   # SHAP explainability plots
 ├── requirements.txt              # Python dependencies
 ├── README.md                     # Project documentation
-└── .gitignore```
+└── .gitignore
+```
 
 
 ## How to Run Locally
