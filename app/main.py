@@ -74,7 +74,7 @@ def aqi_info(aqi):
 # --------------------------------
 # Current AQI Section
 # --------------------------------
-st.markdown("### 🌍 Current Air Quality in Karachi")
+st.markdown("### >> Current Air Quality in Karachi")
 
 try:
     aqi_fg = fs.get_feature_group(AQI_FG, version=1)
@@ -119,7 +119,7 @@ except Exception as e:
 # Forecast Section
 # --------------------------------
 st.markdown("---")
-st.markdown("### 🔮 AQI Forecast")
+st.markdown("### >> AQI Forecast")
 
 try:
     forecast_fg = fs.get_feature_group(FORECAST_FG, version=1)
