@@ -13,7 +13,7 @@ st.set_page_config(
 )
 
 # --------------------------------
-# Custom CSS (Aesthetic)
+# Custom CSS
 # --------------------------------
 st.markdown("""
 <style>
@@ -28,11 +28,19 @@ st.markdown("""
         color: #6b7280;
         margin-bottom: 30px;
     }
+    .card {
+        background:#f9fafb;
+        padding:30px;
+        border-radius:18px;
+        text-align:center;
+        box-shadow:0 4px 10px rgba(0,0,0,0.08);
+        margin-bottom:20px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
 st.markdown("<div class='main-title'>Karachi AQI Dashboard</div>", unsafe_allow_html=True)
-st.markdown("<div class='sub'>Real-time Air Quality Insights & Forecast</div>", unsafe_allow_html=True)
+st.markdown("<div class='sub'>Real-time Air Quality & Forecast</div>", unsafe_allow_html=True)
 
 # --------------------------------
 # Config
@@ -51,55 +59,55 @@ project = hopsworks.login(
 fs = project.get_feature_store()
 
 # --------------------------------
-# AQI Status Helper
+# AQI Status + Health Tips
 # --------------------------------
-def aqi_status(aqi):
+def aqi_info(aqi):
     if aqi <= 50:
-        return "🟢 Good", "#16a34a"
+        return "🟢 Good", "#16a34a", "Air quality is ideal. Enjoy outdoor activities freely."
     elif aqi <= 100:
-        return "🟡 Moderate", "#facc15"
+        return "🟡 Moderate", "#facc15", "Sensitive people should limit prolonged outdoor exertion."
     elif aqi <= 150:
-        return "🟠 Unhealthy", "#fb923c"
+        return "🟠 Unhealthy", "#fb923c", "Children, elderly, and patients should avoid outdoor activity."
     else:
-        return "🔴 Severe", "#dc2626"
+        return "🔴 Severe", "#dc2626", "Everyone should stay indoors and wear masks if going outside."
 
 # --------------------------------
 # Current AQI Section
 # --------------------------------
-st.markdown("### Current AQI")
+st.markdown("### 🌍 Current Air Quality in Karachi")
 
 try:
     aqi_fg = fs.get_feature_group(AQI_FG, version=1)
     df_aqi = aqi_fg.read().sort_values("date", ascending=False)
 
     if not df_aqi.empty:
-        latest_aqi = int(df_aqi.iloc[0]["aqi"])
-        status, color = aqi_status(latest_aqi)
+        latest = df_aqi.iloc[0]
+        latest_aqi = int(latest["aqi"])
+        status, color, tip = aqi_info(latest_aqi)
 
-        col1, col2 = st.columns(2)
+        st.markdown(
+            f"""
+            <div class="card">
+                <h1 style="font-size:60px; margin:0;">{latest_aqi}</h1>
+                <h3 style="color:{color}; margin:10px 0;">{status}</h3>
+                <p style="color:#6b7280;">Last Updated: {latest['date']}</p>
+                <hr>
+                <p style="font-size:16px;"><b>Health Tip:</b> {tip}</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        # Summary
+        st.markdown("### 📊 Last 24 Readings Summary")
+        col1, col2, col3 = st.columns(3)
 
         with col1:
-            st.metric("AQI Value", latest_aqi)
-
+            st.metric("Min AQI", int(df_aqi.head(24)["aqi"].min()))
         with col2:
-            st.markdown(
-                f"<h3 style='color:{color}'>{status}</h3>",
-                unsafe_allow_html=True
-            )
-
-    
-        # Sort by date ASCENDING for proper trend
-        df_aqi = df_aqi.sort_values("date")
-
-        # Take last 30 days
-        trend_df = df_aqi.tail(30)
-
-        # Set date as index
-        trend_df = trend_df.set_index("date")
-
-        st.markdown("#### AQI Trend (Last 30 Days)")
-        st.line_chart(trend_df["aqi"])
-
+            st.metric("Max AQI", int(df_aqi.head(24)["aqi"].max()))
+        with col3:
+            st.metric("Avg AQI", int(df_aqi.head(24)["aqi"].mean()))
 
     else:
         st.warning("No AQI data available yet.")
@@ -111,23 +119,30 @@ except Exception as e:
 # Forecast Section
 # --------------------------------
 st.markdown("---")
-st.markdown("### AQI Forecast")
+st.markdown("### 🔮 AQI Forecast")
 
 try:
     forecast_fg = fs.get_feature_group(FORECAST_FG, version=1)
-    df_forecast = forecast_fg.read()
+    df_forecast = forecast_fg.read().sort_values("date")
 
     if not df_forecast.empty:
         cols = st.columns(len(df_forecast.tail(3)))
 
         for col, (_, row) in zip(cols, df_forecast.tail(3).iterrows()):
-            forecast_aqi = int(row["pred_aqi"])
-            status, color = aqi_status(forecast_aqi)
+            aqi = int(row["pred_aqi"])
+            status, color, tip = aqi_info(aqi)
 
             with col:
-                st.metric("Predicted AQI", forecast_aqi)
                 st.markdown(
-                    f"<span style='color:{color}; font-weight:600'>{status}</span>",
+                    f"""
+                    <div class="card">
+                        <h2>{aqi}</h2>
+                        <p style="color:{color}; font-weight:600;">{status}</p>
+                        <small>{row['date']}</small>
+                        <hr>
+                        <small>{tip}</small>
+                    </div>
+                    """,
                     unsafe_allow_html=True
                 )
     else:
@@ -140,4 +155,4 @@ except Exception as e:
 # Footer
 # --------------------------------
 st.markdown("---")
-st.caption("AQI Forecasting System • Powered by Hopsworks & Streamlit")
+st.caption("AQI Monitoring System • Powered by Hopsworks & Streamlit")
