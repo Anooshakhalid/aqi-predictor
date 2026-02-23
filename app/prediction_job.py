@@ -16,7 +16,6 @@ FORECAST_FG = "aqi_forecast_fg"
 
 # Candidate models from registry (newest will be picked)
 CANDIDATE_MODELS = [
-    "ridge_aqi_model",
     "nn_aqi_model",
     "aqi_rf_model",
     "rf_aqi_model"
