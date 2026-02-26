@@ -3,18 +3,18 @@ import hopsworks
 import pandas as pd
 import os
 
-# --------------------------------
+# -------------------------------
 # Page Config
-# --------------------------------
+# -------------------------------
 st.set_page_config(
     page_title="Karachi AQI Dashboard",
     page_icon="🌫️",
     layout="centered"
 )
 
-# --------------------------------
+# -------------------------------
 # Custom CSS
-# --------------------------------
+# -------------------------------
 st.markdown("""
 <style>
     .main-title {
